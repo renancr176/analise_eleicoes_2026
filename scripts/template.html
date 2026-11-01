@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eleições 2026 — Análise Estatística</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --lula: #e34948; --flavio: #2a78d6; --t1: #c3c2b7; --t2: #52514e; --neutral: #898781;
+  --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
+  --warn-bg: #fff6e0; --warn-bd: #eda100; --ok-bg: #eaf6ea; --ok-bd: #0ca30c;
+  --heat0: #fcfcfb; --heat1: #0d366b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --lula: #e66767; --flavio: #3987e5; --t1: #5a5955; --t2: #c3c2b7; --neutral: #898781;
+    --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9;
+    --warn-bg: #2b2210; --warn-bd: #c98500; --ok-bg: #12230f; --ok-bd: #0ca30c;
+    --heat0: #1a1a19; --heat1: #9ec5f4;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --lula: #e66767; --flavio: #3987e5; --t1: #5a5955; --t2: #c3c2b7; --neutral: #898781;
+  --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9;
+  --warn-bg: #2b2210; --warn-bd: #c98500; --ok-bg: #12230f; --ok-bd: #0ca30c;
+  --heat0: #1a1a19; --heat1: #9ec5f4;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+header h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+header p { margin: 0; color: var(--ink2); }
+nav { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 18px 0 8px; font-size: 13px; }
+nav a { color: var(--ink2); text-decoration: none; border-bottom: 1px solid var(--axis); }
+nav a:hover { color: var(--ink); }
+h2 { font-size: 21px; margin: 44px 0 6px; padding-top: 8px; border-top: 1px solid var(--grid); }
+h3 { font-size: 15px; margin: 0 0 2px; }
+.lead { color: var(--ink2); margin: 0 0 16px; max-width: 860px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-width: 0; }
+.card .sub { color: var(--muted); font-size: 12.5px; margin: 0 0 10px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.grid1 { display: grid; gap: 16px; }
+@media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.kpi .l { font-size: 12px; color: var(--muted); }
+.kpi .v { font-size: 24px; font-weight: 650; margin-top: 2px; }
+.kpi .d { font-size: 12.5px; color: var(--ink2); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.ch { position: relative; height: 320px; }
+.ch.tall { height: 560px; }
+.ch.short { height: 240px; }
+.fontes { font-size: 14px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 8px 12px; overflow-wrap: anywhere; }
+.note { border-left: 3px solid var(--warn-bd); background: var(--warn-bg); padding: 10px 14px; border-radius: 6px; margin: 12px 0; font-size: 14px; }
+.ok { border-left: 3px solid var(--ok-bd); background: var(--ok-bg); padding: 10px 14px; border-radius: 6px; margin: 12px 0; font-size: 14px; }
+.find { margin: 10px 0 0; padding-left: 18px; font-size: 14px; }
+.find li { margin: 4px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+th { color: var(--ink2); font-weight: 600; position: sticky; top: 0; background: var(--surface); cursor: pointer; }
+th:first-child, td:first-child, td.t, th.t { text-align: left; }
+.tbl { overflow: auto; max-height: 460px; }
+.pos { color: var(--lula); } .neg { color: var(--flavio); }
+details { margin-top: 10px; } summary { cursor: pointer; color: var(--ink2); font-size: 13px; }
+.heat { width: 100%; height: auto; display: block; image-rendering: pixelated; border: 1px solid var(--grid); }
+.heatwrap { position: relative; }
+.axislbl { font-size: 11.5px; color: var(--muted); display: flex; justify-content: space-between; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink2); margin: 0 0 8px; }
+.tip { position: fixed; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.15); display: none; z-index: 9; }
+.themebtn { float: right; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+footer { margin-top: 48px; color: var(--muted); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <button class="themebtn" id="themebtn">Tema claro/escuro</button>
+  <h1>Eleições 2026 — Presidente: análise estatística 1º × 2º turno</h1>
+  <p>Processamento seção a seção dos arquivos de dados abertos do TSE (votação por seção + detalhe por seção), com comparação histórica e testes de anomalias.</p>
+  <p class="fontes"><strong>Fonte dos dados:</strong> todos os arquivos utilizados foram obtidos no Portal de Dados Abertos do TSE —
+    <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2014" target="_blank" rel="noopener">Resultados 2014</a> ·
+    <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2018" target="_blank" rel="noopener">Resultados 2018</a> ·
+    <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2022" target="_blank" rel="noopener">Resultados 2022</a> ·
+    <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2026" target="_blank" rel="noopener">Resultados 2026</a></p>
+</header>
+<nav>
+  <a href="#resumo">Resumo</a><a href="#historico">Histórico</a><a href="#anos">Testes em 2014–2022</a><a href="#municipios">Municípios 2022→2026</a><a href="#fluxo">De onde vieram os votos</a>
+  <a href="#migracao">Migração</a><a href="#uf">Por estado</a><a href="#alegacoes">Alegações da conversa</a>
+  <a href="#secoes">Distribuição por seção</a><a href="#outliers">Seções atípicas</a><a href="#fingerprint">Impressão digital</a>
+  <a href="#urna">Modelo de urna</a><a href="#apuracao">Curva da apuração</a><a href="#digitos">Dígitos</a><a href="#conclusao">Conclusões</a>
+</nav>
+
+<div class="note"><b>Como ler esta página.</b> “Anomalia” aqui significa <i>desvio estatístico</i> em relação ao padrão das demais seções — não prova de fraude. Todo resultado eleitoral real tem caudas, seções extremas e diferenças regionais. Para cada teste mostramos também o tamanho do efeito em votos, para que se veja se ele poderia alterar o resultado.</div>
+
+<h2 id="resumo">Resumo</h2>
+<div class="kpis" id="kpis"></div>
+<div class="grid2">
+  <div class="card"><h3>Votos por categoria — 1º × 2º turno</h3><p class="sub">Brasil + exterior, todas as seções. Barras claras = 1º turno; escuras = 2º turno.</p><div class="ch"><canvas id="c_turnos"></canvas></div></div>
+  <div class="card"><h3>Conferência com o resultado oficial</h3><p class="sub">Somatório das 499 mil seções versus totais da conversa / TSE.</p><div class="tbl" id="t_conf"></div>
+  <div class="ok" id="conf_ok"></div></div>
+</div>
+
+<h2 id="historico">Por que 2026 foi atípica: comparação com 2014, 2018 e 2022</h2>
+<p class="lead">Todos os números desta seção vêm do processamento seção a seção dos arquivos do TSE de cada ano (2014: 429 mil seções; 2018: 454 mil; 2022: 472 mil; 2026: 499 mil).</p>
+<div class="grid2">
+  <div class="card"><h3>Abstenção no 1º e no 2º turno (%)</h3><p class="sub">Historicamente a abstenção sobe no 2º turno. Em 2026 ela caiu quase 2 pontos — a maior queda da série.</p><div class="ch"><canvas id="c_abst"></canvas></div></div>
+  <div class="card"><h3>Variação do comparecimento entre os turnos</h3><p class="sub">Eleitores que compareceram a mais (ou a menos) no 2º turno.</p><div class="ch"><canvas id="c_dcomp"></canvas></div></div>
+  <div class="card"><h3>Votos dos eliminados × ganho somado dos dois finalistas</h3><p class="sub">Em 2026 os finalistas ganharam 4,8 milhões a mais do que os eliminados tinham — sobra que vem da queda de brancos/nulos e do aumento de comparecimento.</p><div class="ch"><canvas id="c_pool"></canvas></div></div>
+  <div class="card"><h3>Fatia do ganho do 2º turno capturada por quem estava atrás no 1º turno</h3><p class="sub">O 2º colocado do 1º turno sempre capturou a maior parte. A linha tracejada marca a fatia que ele precisaria para virar.</p><div class="ch"><canvas id="c_capt"></canvas></div></div>
+</div>
+<div class="card" style="margin-top:16px"><div class="tbl" id="t_hist"></div></div>
+<ul class="find" id="hist_find"></ul>
+
+<h2 id="anos">Os mesmos testes aplicados a 2014, 2018 e 2022</h2>
+<p class="lead">Para saber se 2026 é estatisticamente “diferente”, a régua certa não é uma curva teórica — é o comportamento das eleições anteriores, medidas exatamente do mesmo jeito. Em cada ano, “PT” é o candidato do PT (Dilma, Haddad, Lula, Lula) e “adversário” é o outro finalista (Aécio, Bolsonaro, Bolsonaro, Flávio).</p>
+<div class="card"><h3>Painel de indicadores por eleição</h3><p class="sub">Cada linha é um teste; cada coluna, uma eleição. Valores de 2026 destoando dos três anos anteriores seriam o sinal a investigar.</p><div class="tbl" id="t_anos" style="max-height:none"></div></div>
+<ul class="find" id="anos_find"></ul>
+<div class="grid2" style="margin-top:16px">
+  <div class="card"><h3>Seções estatisticamente atípicas (|z| &gt; 4) por eleição</h3><p class="sub">% das seções; dividido pelo lado favorecido.</p><div class="ch"><canvas id="c_anos_z"></canvas></div></div>
+  <div class="card"><h3>Seções com 100% dos votos válidos para um finalista (2º turno)</h3><p class="sub">Contagem por eleição.</p><div class="ch"><canvas id="c_anos_unan"></canvas></div></div>
+  <div class="card"><h3>“Virada” por seção, 1º → 2º turno — distribuição por eleição</h3><p class="sub">% das seções em cada faixa de 1 pp (pp = variação da % do PT). 2022 e 2026 têm dispersão quase idêntica; 2014 e 2018 eram mais dispersas (1º turno mais fragmentado).</p><div class="ch"><canvas id="c_anos_swing"></canvas></div></div>
+  <div class="card"><h3>Para onde foram os eleitores dos eliminados (Goodman)</h3><p class="sub">Coeficiente “outros candidatos do 1º turno → finalista no 2º”.</p><div class="ch"><canvas id="c_anos_good"></canvas></div></div>
+  <div class="card"><h3>Variação do comparecimento 1º → 2º turno, por região (pp do eleitorado)</h3><p class="sub">O Norte cai em todas as eleições; o inédito em 2026 é a alta nas demais regiões.</p><div class="ch"><canvas id="c_anos_compreg"></canvas></div></div>
+  <div class="card"><h3>Curva da apuração do 2º turno: % do PT × % das seções recebidas</h3><p class="sub">Eixo horizontal normalizado (0–100% das seções) para comparar anos. Pontilhado = totalização oficial de 2022 (arquivo Histórico do TSE), usada para validar o método.</p><div class="ch"><canvas id="c_anos_curva"></canvas></div></div>
+</div>
+<ul class="find" id="anos_find2"></ul>
+<div class="grid2" style="margin-top:16px">
+  <div class="card"><h3>Impressão digital do 2º turno — 2014 a 2026</h3><p class="sub">Comparecimento (vertical, 30–100%) × % do PT (horizontal). Mesma escala nos quatro.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="fpgrid"></div></div>
+  <div class="card"><h3>Último dígito — p-valor do qui-quadrado por eleição</h3><p class="sub">p &gt; 0,05 = sem desvio significativo da uniformidade. A linha marca 0,05.</p><div class="ch"><canvas id="c_anos_dig"></canvas></div></div>
+</div>
+
+<h2 id="municipios">Cruzamento por município: 2022 → 2026</h2>
+<p class="lead">Os 5.570 municípios mantêm o mesmo código entre eleições, o que permite comparar o desempenho do PT no 2º turno de 2022 com o de 2026 em cada um. Se houvesse votos “criados” em lugares específicos, eles apareceriam como municípios fugindo muito da tendência geral.</p>
+<div class="grid2">
+  <div class="card"><h3>% de Lula no 2º turno: 2022 × 2026, por município</h3><p class="sub">Cada ponto é um município (≥ 500 votos). Linha diagonal = mesmo resultado nos dois anos.</p><div class="ch tall"><canvas id="c_mun_sc"></canvas></div></div>
+  <div class="card"><h3>Dispersão da variação municipal entre eleições consecutivas</h3><p class="sub">Desvio-padrão da variação da % do PT por município (2º turno). Quanto maior, mais “bagunçada” a mudança geográfica.</p><div class="ch short"><canvas id="c_mun_dp"></canvas></div>
+  <h3 style="margin-top:14px">Variação média da % de Lula 2022 → 2026, por UF</h3><p class="sub">Pontos percentuais.</p><div class="ch" style="height:300px"><canvas id="c_mun_uf"></canvas></div></div>
+</div>
+<ul class="find" id="mun_find"></ul>
+<div class="grid2" style="margin-top:16px">
+  <div class="card"><h3>Municípios que mais se moveram a favor de Lula além da tendência</h3><p class="sub">Resíduo da regressão 2026 ~ 2022, centrado na mediana (pp). Municípios com ≥ 2.000 votos.</p><div class="tbl" id="t_mun_pos"></div></div>
+  <div class="card"><h3>Municípios que mais se moveram a favor de Flávio além da tendência</h3><p class="sub">Resíduo negativo = Flávio melhor do que Bolsonaro em 2022, relativo à tendência.</p><div class="tbl" id="t_mun_neg"></div></div>
+</div>
+
+<h2 id="fluxo">De onde vieram os votos a mais do 2º turno (contabilidade exata)</h2>
+<p class="lead">Identidade contábil, sem nenhuma hipótese: <b>ganho de Lula + ganho de Flávio = votos dos eliminados + queda de brancos/nulos + aumento de comparecimento</b>. Ela diz <i>quanto</i> entrou, mas não <i>quem</i> foi para onde.</p>
+<div class="grid2">
+  <div class="card"><h3>Fontes × destinos (milhões de votos)</h3><p class="sub">Esquerda: de onde pode ter vindo. Direita: para onde foi (saldo líquido).</p><div class="ch"><canvas id="c_fontes"></canvas></div></div>
+  <div class="card"><h3>Cenário da conversa: “ninguém troca de lado”</h3><p class="sub">Quanto do “estoque” disponível cada um precisou para chegar ao total final se nenhum eleitor de Lula foi para Flávio ou vice-versa.</p><div id="t_cen"></div><ul class="find" id="cen_find"></ul></div>
+</div>
+
+<h2 id="migracao">Estimativa de migração (regressão ecológica de Goodman)</h2>
+<p class="lead">Para cada uma das 499.205 seções presentes nos dois turnos, os votos do 2º turno são explicados pela composição do 1º turno da mesma seção. Os coeficientes estimam “que fração de cada grupo do 1º turno foi para cada destino”. É a técnica clássica para o que a conversa queria — mas é <b>ecológica</b>: infere comportamento de grupos, não de indivíduos, e pode produzir valores fora de 0–100%.</p>
+<div class="grid2">
+  <div class="card"><h3>Matriz de transição — Brasil</h3><p class="sub">Linhas: escolha no 1º turno. Colunas: destino no 2º turno.</p><div id="t_goodman"></div></div>
+  <div class="card"><h3>Para onde foram os eleitores dos eliminados, por região</h3><p class="sub">Coeficiente “Outros candidatos → Lula / Flávio / branco-nulo”.</p><div class="ch"><canvas id="c_goodreg"></canvas></div></div>
+</div>
+<ul class="find" id="good_find"></ul>
+<div class="grid2" style="margin-top:16px">
+  <div class="card"><h3>Para onde foi o eleitor de cada candidato eliminado (2026)</h3><p class="sub">Regressão com efeito fixo de município (compara seções dentro da mesma cidade). Cury, Caiado e Zema declararam apoio a Flávio.</p><div class="ch"><canvas id="c_elim"></canvas></div></div>
+  <div class="card"><h3>Brancos e nulos do 1º turno → PT, por eleição</h3><p class="sub">Mesmo modelo com efeito fixo de município — o indicador mais fora do padrão de 2026 resiste ao controle geográfico.</p><div class="ch"><canvas id="c_bnanos"></canvas></div></div>
+</div>
+<ul class="find" id="elim_find"></ul>
+
+<h2 id="uf">Resultados por estado</h2>
+<div class="grid2">
+  <div class="card"><h3>Votos de Lula no 2º turno (% dos válidos)</h3><p class="sub">Barra para a direita de 50% = Lula venceu no estado.</p><div class="ch tall"><canvas id="c_ufshare"></canvas></div></div>
+  <div class="card"><h3>Ganho de votos entre turnos (mil)</h3><p class="sub">Valores negativos = o candidato recebeu menos votos no 2º do que no 1º turno.</p><div class="ch tall"><canvas id="c_ufdelta"></canvas></div></div>
+</div>
+<ul class="find" id="uf_find"></ul>
+<div class="card" style="margin-top:16px"><h3>Tabela por estado</h3><p class="sub">Clique no cabeçalho para ordenar. “Virada” = variação da % de Lula (2º turno, sobre válidos) menos a % de Lula entre Lula+Flávio no 1º turno.</p><div class="tbl" id="t_uf"></div></div>
+
+<h2 id="alegacoes">Verificação das alegações da conversa</h2>
+<div class="grid2">
+  <div class="card"><h3>Seções com 100% dos votos válidos para um candidato</h3><p class="sub">2º turno, por região. Comparação com o 1º turno.</p><div class="ch short"><canvas id="c_unan"></canvas></div><div id="t_unan"></div></div>
+  <div class="card"><h3>Rio de Janeiro — capital × estado</h3><p class="sub">A conversa misturava os dois. Somatório das seções:</p><div id="t_rio"></div><ul class="find" id="rio_find"></ul></div>
+</div>
+<div class="card" style="margin-top:16px"><h3>Municípios em que Flávio variou no máximo 2 votos entre os turnos</h3><p class="sub">Relacionado à alegação “Flávio só ganhou 1 voto a mais”. Municípios com ≥ 1.000 votos válidos.</p><div class="tbl" id="t_mun1"></div></div>
+<details class="card" style="margin-top:16px"><summary>Lista completa das 110 seções unânimes do 2º turno</summary><div class="tbl" id="t_unanlist"></div></details>
+
+<h2 id="secoes">Distribuição dos resultados por seção</h2>
+<div class="grid2">
+  <div class="card"><h3>% de Lula por seção (sobre válidos)</h3><p class="sub">Número de seções em cada faixa de 1 ponto. Seções com ≥ 20 votos válidos. O pico estreito em 50% é artefato aritmético (empates exatos são frequentes em seções pequenas), aparece nos dois turnos.</p><div class="ch"><canvas id="c_sharehist"></canvas></div></div>
+  <div class="card"><h3>“Virada” por seção (pontos percentuais)</h3><p class="sub">% Lula no 2º turno − % Lula entre Lula+Flávio no 1º turno. Seções com ≥ 30 votos.</p><div class="ch"><canvas id="c_swing"></canvas></div></div>
+  <div class="card"><h3>Variação do comparecimento por seção (pp do eleitorado)</h3><p class="sub">Comparecimento 2º turno − 1º turno, sobre aptos. Seções com ≥ 50 aptos.</p><div class="ch"><canvas id="c_dturn"></canvas></div></div>
+  <div class="card"><h3>Seções em que um finalista perdeu votos</h3><p class="sub">Perda líquida mínima — é um limite inferior de quantos eleitores daquele candidato deixaram de votar nele.</p><div class="ch"><canvas id="c_perdas"></canvas></div><ul class="find" id="perd_find"></ul></div>
+</div>
+
+<h2 id="outliers">Seções estatisticamente atípicas</h2>
+<p class="lead">Para cada seção, a “virada” foi comparada com a mediana das seções do <b>mesmo município</b> (controla a geografia). O resíduo é padronizado pelo desvio absoluto mediano (MAD) → escore robusto z. |z| &gt; 4 é muito raro numa curva normal.</p>
+<div class="grid2">
+  <div class="card"><h3>Distribuição do escore z (escala log)</h3><p class="sub">Barras = seções observadas. Linha = o que uma distribuição normal perfeita daria.</p><div class="ch"><canvas id="c_z"></canvas></div></div>
+  <div class="card"><h3>Seções com |z| &gt; 4 por estado (% das seções)</h3><p class="sub">Concentração geográfica das seções atípicas.</p><div class="ch"><canvas id="c_zuf"></canvas></div></div>
+</div>
+<ul class="find" id="out_find"></ul>
+<div class="card" style="margin-top:16px"><h3>As 40 seções mais atípicas</h3><p class="sub">z positivo = virada pró-Lula acima do município; negativo = pró-Flávio.</p><div class="tbl" id="t_out"></div></div>
+
+<h2 id="fingerprint">“Impressão digital” eleitoral (comparecimento × % de Lula)</h2>
+<p class="lead">Teste de Klimek et al. (PNAS 2012): em eleições com enchimento de urna aparece uma “mancha” anômala no canto de comparecimento ≈ 100% e votação ≈ 100% para um candidato. Cada pixel = número de seções. Eixo horizontal: % de Lula (0 → 100%); vertical: comparecimento (30% embaixo → 100% em cima).</p>
+<div class="grid2">
+  <div class="card"><h3>1º turno</h3><p class="sub" id="fp1sub"></p><div class="heatwrap"><canvas class="heat" id="fp1" width="100" height="70"></canvas></div><div class="axislbl"><span>0% Lula</span><span>50%</span><span>100% Lula</span></div></div>
+  <div class="card"><h3>2º turno</h3><p class="sub" id="fp2sub"></p><div class="heatwrap"><canvas class="heat" id="fp2" width="100" height="70"></canvas></div><div class="axislbl"><span>0% Lula</span><span>50%</span><span>100% Lula</span></div></div>
+</div>
+<ul class="find" id="fp_find"></ul>
+
+<h2 id="urna">Resultado por modelo de urna</h2>
+<p class="lead">Alegação recorrente desde 2022: urnas de modelos antigos dariam resultado diferente. Comparar a % bruta engana (modelos não são distribuídos igualmente entre regiões), então a medida justa é o resíduo dentro do mesmo município.</p>
+<div class="grid2">
+  <div class="card"><h3>% de Lula no 2º turno por modelo (bruto)</h3><p class="sub">Sobre Lula+Flávio. Diferenças refletem principalmente onde cada modelo está instalado.</p><div class="ch short"><canvas id="c_mod"></canvas></div></div>
+  <div class="card"><h3>Resíduo médio da virada dentro do município (pp)</h3><p class="sub">Quanto a virada da seção difere da mediana do próprio município, em média, por modelo.</p><div class="ch short"><canvas id="c_modres"></canvas></div></div>
+</div>
+<div class="card" style="margin-top:16px"><div class="tbl" id="t_mod"></div></div>
+
+<h2 id="apuracao">Curva da apuração (horário de recebimento do BU no TSE)</h2>
+<p class="lead">A “virada durante a apuração” é um dos argumentos mais citados. A curva abaixo reconstrói a % acumulada de cada candidato em função do horário em que cada boletim de urna chegou ao TSE (horário de Brasília).</p>
+<div class="grid2">
+  <div class="card"><h3>% de Lula acumulada ao longo da apuração</h3><p class="sub">Sobre Lula+Flávio. Linha de 50% = empate.</p><div class="ch"><canvas id="c_curva"></canvas></div></div>
+  <div class="card"><h3>% das seções de cada região já recebidas (2º turno)</h3><p class="sub">Norte, Sul e Centro-Oeste chegam antes; Sudeste e Nordeste completam por último.</p><div class="ch"><canvas id="c_curvareg"></canvas></div></div>
+</div>
+<ul class="find" id="cur_find"></ul>
+
+<h2 id="digitos">Testes de dígitos</h2>
+<p class="lead">O <b>último dígito</b> das contagens de votos deveria ser uniforme (10% cada) se os números não foram inventados por humanos. A <b>Lei de Benford</b> (2º dígito) é muito citada, mas não se aplica bem a seções eleitorais porque elas têm tamanho limitado (~300 eleitores) — é mostrada apenas para comparação.</p>
+<div class="grid2">
+  <div class="card"><h3>Último dígito — 2º turno</h3><p class="sub" id="dig1sub"></p><div class="ch"><canvas id="c_last"></canvas></div></div>
+  <div class="card"><h3>2º dígito × Lei de Benford — 2º turno</h3><p class="sub">Os dois candidatos se desviam de Benford, na mesma direção — o esperado quando as seções têm tamanho limitado. Por isso este teste não serve como indicador de fraude aqui.</p><div class="ch"><canvas id="c_benf"></canvas></div></div>
+</div>
+
+<h2 id="conclusao">Conclusões</h2>
+<div class="card"><ul class="find" id="concl"></ul></div>
+
+<footer>
+  Fonte: TSE — Dados Abertos: votacao_secao_{2014,2018,2022,2026}_BR, detalhe_votacao_secao_{ano}_BR, votacao_candidato_munzona_2026 e Historico_Totalizacao_Presidente_BR_2022. Processamento independente seção a seção dos quatro anos (≈ 1,85 milhão de seções). 2014 não traz horário do BU nem modelo de urna; 2018 não traz modelo de urna. Esta análise é estatística e descritiva; não substitui auditoria de logs, RDV e boletins de urna.
+</footer>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+const D = /*__DATA__*/null;
+const BNC = /*__BN__*/null;
+const Y = /*__ANOS__*/null, X = /*__CROSS__*/null, H22 = /*__H22__*/null;
+Y[2026] = D;
+const ANOS = [2014, 2018, 2022, 2026];
+const NOMES = {2014: ['Dilma', 'Aécio'], 2018: ['Haddad', 'Bolsonaro'], 2022: ['Lula', 'Bolsonaro'], 2026: ['Lula', 'Flávio']};
+const N = D.nacional, P = D.perdas, GA = a => Y[a].goodman.BR;
+// a = líder do 1º turno, b = 2º colocado
+const HIST = ANOS.map(ano => {
+  const n = Y[ano].nacional, ptLead = n.lula1 > n.flavio1, [pt, adv] = NOMES[ano];
+  const L = ptLead ? ['lula', pt, 'flavio', adv] : ['flavio', adv, 'lula', pt];
+  return {ano, a: L[1], b: L[3], a1: n[L[0] + '1'], b1: n[L[2] + '1'], a2: n[L[0] + '2'], b2: n[L[2] + '2'],
+    val1: n.lula1 + n.flavio1 + n.outros1, val2: n.lula2 + n.flavio2, aptos: n.aptos1, comp1: n.comp1, comp2: n.comp2,
+    lider1: L[1], venceu: n.lula2 > n.flavio2 ? pt : adv};
+});
+
+const nf = new Intl.NumberFormat('pt-BR');
+const f0 = x => nf.format(Math.round(x));
+const fp = (x, d = 1) => (x).toLocaleString('pt-BR', {minimumFractionDigits: d, maximumFractionDigits: d});
+const pct = (a, b, d = 2) => fp(100 * a / b, d) + '%';
+const mi = x => fp(x / 1e6, 2) + ' mi';
+const sgn = (x, f) => (x > 0 ? '+' : '') + f(x);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = id => document.getElementById(id);
+const li = (id, arr) => { $(id).innerHTML = arr.map(s => `<li>${s}</li>`).join(''); };
+
+function table(id, head, rows, opts = {}) {
+  const el = $(id);
+  let sortCol = -1, asc = true;
+  const render = () => {
+    let r = rows.slice();
+    if (sortCol >= 0) r.sort((x, y) => { const a = x[sortCol].s ?? x[sortCol], b = y[sortCol].s ?? y[sortCol]; return (a > b ? 1 : a < b ? -1 : 0) * (asc ? 1 : -1); });
+    el.innerHTML = '<table><thead><tr>' + head.map((h, i) => `<th data-i="${i}" class="${i < (opts.textCols || 1) ? 't' : ''}">${h}</th>`).join('') + '</tr></thead><tbody>' +
+      r.map(row => '<tr>' + row.map((c, i) => `<td class="${i < (opts.textCols || 1) ? 't' : ''} ${c.c || ''}">${c.v ?? c}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
+    el.querySelectorAll('th').forEach(th => th.onclick = () => { const i = +th.dataset.i; asc = sortCol === i ? !asc : false; sortCol = i; render(); });
+  };
+  render();
+}
+const cell = (v, s, c) => ({v, s, c});
+
+// ---------- KPIs ----------
+const v2 = N.lula2 + N.flavio2, v1 = N.lula1 + N.flavio1 + N.outros1;
+$('kpis').innerHTML = [
+  ['Lula — 2º turno', f0(N.lula2), pct(N.lula2, v2) + ' dos válidos', 'var(--lula)'],
+  ['Flávio Bolsonaro — 2º turno', f0(N.flavio2), pct(N.flavio2, v2) + ' dos válidos', 'var(--flavio)'],
+  ['Margem final', f0(N.lula2 - N.flavio2), 'no 1º turno Flávio liderava por ' + f0(N.flavio1 - N.lula1)],
+  ['Comparecimento', sgn(N.comp2 - N.comp1, f0), pct(N.comp1, N.aptos1) + ' → ' + pct(N.comp2, N.aptos2)],
+  ['Seções analisadas', f0(D.pareamento.ambos), 'presentes nos dois turnos'],
+].map(([l, v, d, c]) => `<div class="kpi"><div class="l">${c ? `<span class="dot" style="background:${c}"></span>` : ''}${l}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+
+table('t_conf', ['Item', 'Somatório das seções', 'Citado na conversa'], [
+  ['Lula 1º turno', f0(N.lula1), '53.879.538'], ['Flávio 1º turno', f0(N.flavio1), '56.104.503'],
+  ['Lula 2º turno', f0(N.lula2), '64.256.232'], ['Flávio 2º turno', f0(N.flavio2), '59.826.041'],
+  ['Cury', f0(N.cury), '3.448.569'], ['Renan Santos', f0(N.renan), '2.675.887'], ['Caiado', f0(N.caiado), '2.605.148'], ['Zema', f0(N.zema), '326.488'],
+  ['Todos os eliminados', f0(N.outros1), '9.316.747'],
+  ['Seções com votos no 2º turno', f0(N.secoes_t2), '499.205'],
+]);
+$('conf_ok').innerHTML = `Todos os totais dos finalistas e dos candidatos citados batem <b>exatamente</b> com os dados por seção. A única diferença é o total dos eliminados (${f0(N.outros1)} × 9.316.747 = ${f0(N.outros1 - 9316747)} votos), porque a conversa somou “demais candidatos” com arredondamento. A soma Cury + Caiado + Zema citada na conversa (6.380.205) também confere: ${f0(N.cury + N.caiado + N.zema)}.`;
+
+// ---------- Chart defaults ----------
+function setupChartDefaults() {
+  Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = css('--muted');
+  Chart.defaults.borderColor = css('--grid');
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.plugins.legend.labels.boxWidth = 10;
+  Chart.defaults.plugins.legend.labels.boxHeight = 10;
+  Chart.defaults.plugins.legend.labels.color = css('--ink2');
+  Chart.defaults.plugins.tooltip.backgroundColor = css('--surface');
+  Chart.defaults.plugins.tooltip.titleColor = css('--ink');
+  Chart.defaults.plugins.tooltip.bodyColor = css('--ink2');
+  Chart.defaults.plugins.tooltip.borderColor = css('--axis');
+  Chart.defaults.plugins.tooltip.borderWidth = 1;
+  Chart.defaults.elements.bar.borderRadius = 4;
+  Chart.defaults.elements.bar.borderSkipped = 'start';
+  Chart.defaults.elements.line.borderWidth = 2;
+  Chart.defaults.elements.point.radius = 0;
+  Chart.defaults.elements.point.hoverRadius = 5;
+  Chart.defaults.interaction = {mode: 'index', intersect: false};
+}
+const charts = [];
+const mk = (id, cfg) => { charts.push({id, cfg}); };
+const tickMi = {callback: v => fp(v / 1e6, 0) + ' mi'};
+
+function buildAll() {
+  charts.forEach(c => c.inst && c.inst.destroy());
+  setupChartDefaults();
+  const C = {lula: css('--lula'), flavio: css('--flavio'), t1: css('--t1'), t2: css('--t2'), neutral: css('--neutral'),
+             s3: css('--s3'), s4: css('--s4'), s5: css('--s5'), s6: css('--s6'), s7: css('--s7'), ink2: css('--ink2'), axis: css('--axis')};
+  charts.length = 0;
+  defineCharts(C);
+  defineAnos(C);
+  defineBN(C);
+  charts.forEach(c => { c.inst = new Chart($(c.id), typeof c.cfg === 'function' ? c.cfg() : c.cfg); });
+  drawHeat();
+  drawHeatGrid();
+}
+
+function defineCharts(C) {
+  // 1º x 2º turno
+  mk('c_turnos', {type: 'bar', data: {labels: ['Lula', 'Flávio', 'Eliminados', 'Brancos + nulos', 'Abstenções'],
+    datasets: [
+      {label: '1º turno', data: [N.lula1, N.flavio1, N.outros1, N.bn1, N.aptos1 - N.comp1], backgroundColor: C.t1},
+      {label: '2º turno', data: [N.lula2, N.flavio2, 0, N.bn2, N.aptos2 - N.comp2], backgroundColor: C.t2}]},
+    options: {scales: {y: {ticks: tickMi}, x: {grid: {display: false}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${f0(c.raw)}`}}}}});
+
+  // histórico
+  const anos = HIST.map(h => String(h.ano));
+  mk('c_abst', {type: 'bar', data: {labels: anos, datasets: [
+    {label: '1º turno', data: HIST.map(h => 100 * (1 - h.comp1 / h.aptos)), backgroundColor: C.t1},
+    {label: '2º turno', data: HIST.map(h => 100 * (1 - h.comp2 / h.aptos)), backgroundColor: C.t2}]},
+    options: {scales: {y: {min: 15, max: 23, ticks: {callback: v => v + '%'}}, x: {grid: {display: false}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw, 2)}%`}}}}});
+  mk('c_dcomp', {type: 'bar', data: {labels: anos, datasets: [{label: 'Variação do comparecimento', data: HIST.map(h => h.comp2 - h.comp1),
+    backgroundColor: HIST.map(h => h.ano === 2026 ? C.t2 : C.t1)}]},
+    options: {plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => sgn(c.raw, f0) + ' eleitores'}}}, scales: {y: {ticks: {callback: v => fp(v / 1e6, 1) + ' mi'}}, x: {grid: {display: false}}}}});
+  mk('c_pool', {type: 'bar', data: {labels: anos, datasets: [
+    {label: 'Votos dos eliminados (1º turno)', data: HIST.map(h => h.val1 - h.a1 - h.b1), backgroundColor: C.t1},
+    {label: 'Ganho somado dos finalistas', data: HIST.map(h => h.a2 + h.b2 - h.a1 - h.b1), backgroundColor: C.t2}]},
+    options: {scales: {y: {ticks: tickMi}, x: {grid: {display: false}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${f0(c.raw)}`}}}}});
+  const capt = HIST.map(h => { const ga = h.a2 - h.a1, gb = h.b2 - h.b1; return 100 * gb / (ga + gb); });
+  const need = HIST.map(h => { const ga = h.a2 - h.a1, gb = h.b2 - h.b1; return 100 * ((ga + gb) + (h.a1 - h.b1)) / 2 / (ga + gb); });
+  mk('c_capt', {type: 'bar', data: {labels: HIST.map(h => `${h.ano} (${h.b})`), datasets: [
+    {type: 'line', label: 'Fatia necessária para virar', data: need, borderColor: C.ink2, borderDash: [5, 4], pointRadius: 4, pointBackgroundColor: C.ink2},
+    {label: 'Fatia capturada pelo 2º colocado', data: capt, backgroundColor: HIST.map(h => h.ano === 2026 ? C.lula : C.t1)}]},
+    options: {scales: {y: {min: 40, max: 100, ticks: {callback: v => v + '%'}}, x: {grid: {display: false}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw)}%`}}}}});
+
+  // fontes x destinos
+  const dComp = N.comp2 - N.comp1, dBN = N.bn1 - N.bn2;
+  mk('c_fontes', {type: 'bar', data: {labels: ['Fontes', 'Destinos'], datasets: [
+    {label: 'Votos dos eliminados', data: [N.outros1, 0], backgroundColor: C.neutral, stack: 's'},
+    {label: 'Queda de brancos/nulos', data: [dBN, 0], backgroundColor: C.s4, stack: 's'},
+    {label: 'Aumento de comparecimento', data: [dComp, 0], backgroundColor: C.s3, stack: 's'},
+    {label: 'Ganho de Lula', data: [0, N.lula2 - N.lula1], backgroundColor: C.lula, stack: 's'},
+    {label: 'Ganho de Flávio', data: [0, N.flavio2 - N.flavio1], backgroundColor: C.flavio, stack: 's'}]},
+    options: {indexAxis: 'y', interaction: {mode: 'nearest', intersect: true}, scales: {x: {stacked: true, ticks: tickMi}, y: {stacked: true, grid: {display: false}}},
+      datasets: {bar: {borderColor: css('--surface'), borderWidth: {left: 2, right: 0}}},
+      plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${f0(c.raw)}`}}}}});
+
+  // Goodman por região
+  const regs = ['N', 'NE', 'CO', 'SE', 'S', 'BR'], regN = {N: 'Norte', NE: 'Nordeste', CO: 'Centro-Oeste', SE: 'Sudeste', S: 'Sul', BR: 'Brasil'};
+  mk('c_goodreg', {type: 'bar', data: {labels: regs.map(r => regN[r]), datasets: [
+    {label: '→ Lula', data: regs.map(r => 100 * D.goodman[r].lula2[2]), backgroundColor: C.lula},
+    {label: '→ Flávio', data: regs.map(r => 100 * D.goodman[r].flavio2[2]), backgroundColor: C.flavio},
+    {label: '→ Branco/nulo', data: regs.map(r => 100 * D.goodman[r].bn2[2]), backgroundColor: C.neutral}]},
+    options: {scales: {y: {ticks: {callback: v => v + '%'}}, x: {grid: {display: false}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw)}%`}}}}});
+
+  // UF
+  const ufs = D.uf.slice().sort((a, b) => b.lula2 / (b.lula2 + b.flavio2) - a.lula2 / (a.lula2 + a.flavio2));
+  mk('c_ufshare', {type: 'bar', data: {labels: ufs.map(u => u.uf === 'ZZ' ? 'Exterior' : u.uf), datasets: [
+    {label: '% Lula', data: ufs.map(u => 100 * u.lula2 / (u.lula2 + u.flavio2) - 50), base: 0,
+     backgroundColor: ufs.map(u => u.lula2 > u.flavio2 ? C.lula : C.flavio)}]},
+    options: {indexAxis: 'y', interaction: {mode: 'nearest', axis: 'y', intersect: false},
+      scales: {x: {min: -30, max: 30, ticks: {callback: v => (v + 50) + '%'}}, y: {grid: {display: false}, ticks: {autoSkip: false, font: {size: 11}}}},
+      plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => { const u = ufs[c.dataIndex]; return [`Lula ${pct(u.lula2, u.lula2 + u.flavio2)} (${f0(u.lula2)})`, `Flávio ${pct(u.flavio2, u.lula2 + u.flavio2)} (${f0(u.flavio2)})`]; }}}}}});
+  const ufs2 = D.uf.slice().sort((a, b) => (b.lula2 - b.lula1 + b.flavio2 - b.flavio1) - (a.lula2 - a.lula1 + a.flavio2 - a.flavio1));
+  mk('c_ufdelta', {type: 'bar', data: {labels: ufs2.map(u => u.uf === 'ZZ' ? 'Exterior' : u.uf), datasets: [
+    {label: 'Ganho de Lula', data: ufs2.map(u => (u.lula2 - u.lula1) / 1000), backgroundColor: C.lula},
+    {label: 'Ganho de Flávio', data: ufs2.map(u => (u.flavio2 - u.flavio1) / 1000), backgroundColor: C.flavio}]},
+    options: {indexAxis: 'y', scales: {x: {ticks: {callback: v => f0(v) + ' mil'}}, y: {grid: {display: false}, ticks: {autoSkip: false, font: {size: 11}}}},
+      plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${sgn(Math.round(c.raw * 1000), f0)}`}}}}});
+
+  // unânimes
+  const ur = ['N', 'NE', 'CO', 'SE', 'S'];
+  mk('c_unan', {type: 'bar', data: {labels: ur.map(r => regN[r]), datasets: [
+    {label: '100% Lula', data: ur.map(r => D.unanimes_regiao[r].lula), backgroundColor: C.lula},
+    {label: '100% Flávio', data: ur.map(r => D.unanimes_regiao[r].flavio), backgroundColor: C.flavio}]},
+    options: {scales: {x: {grid: {display: false}}}}});
+
+  // histogramas por seção
+  const pl = Array.from({length: 100}, (_, i) => i + '%');
+  mk('c_sharehist', {type: 'line', data: {labels: pl, datasets: [
+    {label: 'Lula — 1º turno', data: D.hist_share.t1_lula, borderColor: C.t1, borderDash: [4, 3]},
+    {label: 'Lula — 2º turno', data: D.hist_share.t2_lula, borderColor: C.lula}]},
+    options: {scales: {y: {ticks: {callback: v => f0(v)}}, x: {ticks: {maxTicksLimit: 11}}}, plugins: {tooltip: {callbacks: {title: c => `${c[0].dataIndex}–${c[0].dataIndex + 1}% de Lula`, label: c => `${c.dataset.label}: ${f0(c.raw)} seções`}}}}});
+  const se = D.hist_swing.edges;
+  mk('c_swing', {type: 'bar', data: {labels: se.slice(0, -1).map(e => fp(e * 100, 0)), datasets: [
+    {label: 'Seções', data: D.hist_swing.counts, backgroundColor: se.slice(0, -1).map(e => e >= 0 ? C.lula : C.flavio), borderRadius: 2}]},
+    options: {plugins: {legend: {display: false}, tooltip: {callbacks: {title: c => `${fp(se[c[0].dataIndex] * 100, 0)} a ${fp(se[c[0].dataIndex + 1] * 100, 0)} pp`, label: c => f0(c.raw) + ' seções'}}},
+      scales: {x: {grid: {display: false}, ticks: {maxTicksLimit: 13}}, y: {ticks: {callback: v => f0(v)}}}}});
+  const te = D.hist_dturn.edges;
+  mk('c_dturn', {type: 'bar', data: {labels: te.slice(0, -1).map(e => fp(e * 100, 0)), datasets: [
+    {label: 'Seções', data: D.hist_dturn.counts, backgroundColor: C.s3, borderRadius: 2}]},
+    options: {plugins: {legend: {display: false}, tooltip: {callbacks: {title: c => `${fp(te[c[0].dataIndex] * 100, 0)} a ${fp(te[c[0].dataIndex + 1] * 100, 0)} pp`, label: c => f0(c.raw) + ' seções'}}},
+      scales: {x: {grid: {display: false}, ticks: {maxTicksLimit: 13}}, y: {ticks: {callback: v => f0(v)}}}}});
+  mk('c_perdas', {type: 'bar', data: {labels: ['Flávio perdeu votos', 'Lula perdeu votos'], datasets: [
+    {label: 'Seções', data: [P.secoes_flavio_perdeu, P.secoes_lula_perdeu], backgroundColor: [C.flavio, C.lula]}]},
+    options: {indexAxis: 'y', plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => [`${f0(c.raw)} seções`, `perda líquida: ${f0(c.dataIndex ? P.votos_lula_perdeu : P.votos_flavio_perdeu)} votos`]}}},
+      scales: {y: {grid: {display: false}}, x: {ticks: {callback: v => f0(v)}}}}});
+
+  // z
+  const ze = D.hist_z.edges, ntot = D.outliers_cfg.n;
+  const normal = ze.slice(0, -1).map((e, i) => { const a = e, b = ze[i + 1]; return ntot * (Phi(b) - Phi(a)); });
+  mk('c_z', {type: 'bar', data: {labels: ze.slice(0, -1).map(e => fp(e, 1)), datasets: [
+    {type: 'line', label: 'Normal teórica', data: normal.map(x => x < 0.5 ? null : x), borderColor: C.ink2, borderDash: [5, 4]},
+    {label: 'Seções observadas', data: D.hist_z.counts.map(x => x || null), backgroundColor: ze.slice(0, -1).map(e => Math.abs(e + 0.25) > 4 ? C.s4 : C.t1), borderRadius: 2}]},
+    options: {scales: {y: {type: 'logarithmic', min: 1, ticks: {callback: v => [1, 10, 100, 1000, 10000, 100000].includes(v) ? f0(v) : ''}}, x: {grid: {display: false}, ticks: {maxTicksLimit: 11}}},
+      plugins: {tooltip: {callbacks: {title: c => `z entre ${ze[c[0].dataIndex]} e ${ze[c[0].dataIndex + 1]}`, label: c => `${c.dataset.label}: ${c.raw == null ? 0 : f0(c.raw)}`}}}}});
+  const zu = Object.entries(D.outliers_uf).filter(([u, v]) => v.n > 0).map(([u, v]) => [u, 100 * v.z4 / v.n, v.z4, v.n]).sort((a, b) => b[1] - a[1]);
+  mk('c_zuf', {type: 'bar', data: {labels: zu.map(z => z[0] === 'ZZ' ? 'Ext.' : z[0]), datasets: [{label: '% das seções com |z|>4', data: zu.map(z => z[1]), backgroundColor: C.s4}]},
+    options: {plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => `${fp(c.raw, 2)}% (${zu[c.dataIndex][2]} de ${f0(zu[c.dataIndex][3])} seções)`}}},
+      scales: {x: {grid: {display: false}, ticks: {autoSkip: false, font: {size: 10}}}, y: {ticks: {callback: v => fp(v, 2) + '%'}}}}});
+
+  // modelo
+  const mods = D.modelos.filter(m => m.secoes_t2 > 1000).sort((a, b) => a.modelo.localeCompare(b.modelo));
+  const mn = m => m.modelo.split(' | ')[0];
+  mk('c_mod', {type: 'bar', data: {labels: mods.map(mn), datasets: [
+    {label: '1º turno (Lula entre Lula+Flávio)', data: mods.map(m => 100 * m.lula1 / (m.lula1 + m.flavio1)), backgroundColor: C.t1},
+    {label: '2º turno', data: mods.map(m => 100 * m.lula2 / (m.lula2 + m.flavio2)), backgroundColor: C.lula}]},
+    options: {scales: {y: {min: 40, max: 60, ticks: {callback: v => v + '%'}}, x: {grid: {display: false}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw, 2)}%`}}}}});
+  mk('c_modres', {type: 'bar', data: {labels: mods.map(mn), datasets: [{label: 'Resíduo médio (pp)', data: mods.map(m => m.resid_medio), backgroundColor: C.s7}]},
+    options: {plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => `${fp(c.raw, 3)} pp em ${f0(mods[c.dataIndex].resid_n)} seções`}}},
+      scales: {y: {min: -1, max: 1, ticks: {callback: v => fp(v, 1) + ' pp'}}, x: {grid: {display: false}}}}});
+
+  // curva
+  const cv = (arr) => arr.filter(p => p[3] > 2000).map(p => ({x: p[0] / 60, y: 100 * p[1] / (p[1] + p[2]), n: p[3]}));
+  const hh = v => { const h = Math.floor(v), m = Math.round((v - h) * 60); return `${String(h % 24).padStart(2, '0')}h${String(m).padStart(2, '0')}`; };
+  mk('c_curva', {type: 'line', data: {datasets: [
+    {label: '1º turno', data: cv(D.curva.t1), borderColor: C.t2, borderDash: [4, 3]},
+    {label: '2º turno', data: cv(D.curva.t2), borderColor: C.lula},
+    {label: 'Empate (50%)', data: [{x: 17, y: 50}, {x: 24, y: 50}], borderColor: C.axis, borderWidth: 1}]},
+    options: {interaction: {mode: 'nearest', intersect: false, axis: 'x'}, scales: {x: {type: 'linear', min: 17, max: 23, ticks: {stepSize: 1, callback: v => hh(v)}}, y: {min: 35, max: 60, ticks: {callback: v => v + '%'}}},
+      plugins: {tooltip: {filter: c => c.datasetIndex < 2, callbacks: {title: c => hh(c[0].raw.x), label: c => `${c.dataset.label}: Lula ${fp(c.raw.y, 2)}% — ${f0(c.raw.n)} seções apuradas`}}}}});
+  const rc = ['N', 'NE', 'CO', 'SE', 'S'], rcol = [C.s3, C.lula, C.s4, C.flavio, C.s7];
+  mk('c_curvareg', {type: 'line', data: {labels: D.curva_regiao.N.map(p => hh(p[0] / 60)), datasets: rc.map((r, i) => ({
+    label: regN[r], data: D.curva_regiao[r].map(p => 100 * p[1] / D.curva_regiao[r][D.curva_regiao[r].length - 1][1]), borderColor: rcol[i]}))},
+    options: {scales: {x: {ticks: {maxTicksLimit: 10}}, y: {min: 0, max: 100, ticks: {callback: v => v + '%'}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw)}% das seções`}}}}});
+
+  // dígitos
+  const dg = D.digitos;
+  const fr = a => { const s = a.reduce((x, y) => x + y, 0); return a.map(x => 100 * x / s); };
+  mk('c_last', {type: 'bar', data: {labels: [...'0123456789'], datasets: [
+    {type: 'line', label: 'Esperado (10%)', data: Array(10).fill(10), borderColor: C.ink2, borderDash: [5, 4]},
+    {label: 'Lula', data: fr(dg.lula2.ultimo), backgroundColor: C.lula},
+    {label: 'Flávio', data: fr(dg.flavio2.ultimo), backgroundColor: C.flavio}]},
+    options: {scales: {y: {min: 9, max: 11, ticks: {callback: v => fp(v, 1) + '%'}}, x: {grid: {display: false}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw, 2)}%`}}}}});
+  const benf = Array.from({length: 10}, (_, d) => { let s = 0; for (let k = 1; k <= 9; k++) s += Math.log10(1 + 1 / (10 * k + d)); return 100 * s; });
+  mk('c_benf', {type: 'bar', data: {labels: [...'0123456789'], datasets: [
+    {type: 'line', label: 'Benford', data: benf, borderColor: C.ink2, borderDash: [5, 4]},
+    {label: 'Lula', data: fr(dg.lula2.segundo), backgroundColor: C.lula},
+    {label: 'Flávio', data: fr(dg.flavio2.segundo), backgroundColor: C.flavio}]},
+    options: {scales: {y: {ticks: {callback: v => v + '%'}}, x: {grid: {display: false}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw, 2)}%`}}}}});
+}
+
+function defineAnos(C) {
+  const cy = {2014: C.s3, 2018: C.s4, 2022: C.s7, 2026: C.t2};
+  const lab = ANOS.map(String);
+  mk('c_anos_z', {type: 'bar', data: {labels: lab, datasets: [
+    {label: 'Atípicas pró-PT', data: ANOS.map(a => 100 * Y[a].outliers_cfg.z4_pro_lula / Y[a].outliers_cfg.n), backgroundColor: C.lula, stack: 'z'},
+    {label: 'Atípicas pró-adversário', data: ANOS.map(a => 100 * Y[a].outliers_cfg.z4_pro_flavio / Y[a].outliers_cfg.n), backgroundColor: C.flavio, stack: 'z'}]},
+    options: {scales: {x: {stacked: true, grid: {display: false}}, y: {stacked: true, ticks: {callback: v => fp(v, 2) + '%'}}},
+      plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw, 3)}% (${f0(c.datasetIndex ? Y[ANOS[c.dataIndex]].outliers_cfg.z4_pro_flavio : Y[ANOS[c.dataIndex]].outliers_cfg.z4_pro_lula)} seções)`}}}}});
+  mk('c_anos_unan', {type: 'bar', data: {labels: lab, datasets: [
+    {label: '100% PT', data: ANOS.map(a => Y[a].unanimes.t2.lula), backgroundColor: C.lula},
+    {label: '100% adversário', data: ANOS.map(a => Y[a].unanimes.t2.flavio), backgroundColor: C.flavio}]},
+    options: {scales: {x: {grid: {display: false}}}}});
+  const se = D.hist_swing.edges;
+  mk('c_anos_swing', {type: 'line', data: {labels: se.slice(0, -1).map(e => fp(e * 100, 0)), datasets: ANOS.map(a => {
+    const c = Y[a].hist_swing.counts, s = c.reduce((x, y) => x + y, 0);
+    return {label: String(a), data: c.map(v => 100 * v / s), borderColor: cy[a], borderWidth: a === 2026 ? 2.5 : 2};})},
+    options: {scales: {x: {ticks: {maxTicksLimit: 13}}, y: {ticks: {callback: v => v + '%'}}}, plugins: {tooltip: {callbacks: {title: c => `${fp(se[c[0].dataIndex] * 100, 0)} a ${fp(se[c[0].dataIndex + 1] * 100, 0)} pp`, label: c => `${c.dataset.label}: ${fp(c.raw, 2)}% das seções`}}}}});
+  mk('c_anos_good', {type: 'bar', data: {labels: lab, datasets: [
+    {label: '→ PT', data: ANOS.map(a => 100 * Y[a].goodman.BR.lula2[2]), backgroundColor: C.lula},
+    {label: '→ Adversário', data: ANOS.map(a => 100 * Y[a].goodman.BR.flavio2[2]), backgroundColor: C.flavio},
+    {label: '→ Branco/nulo', data: ANOS.map(a => 100 * Y[a].goodman.BR.bn2[2]), backgroundColor: C.neutral}]},
+    options: {scales: {x: {grid: {display: false}}, y: {ticks: {callback: v => v + '%'}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw)}%`}}}}});
+  const rg = ['N', 'NE', 'CO', 'SE', 'S'], rgN = {N: 'Norte', NE: 'Nordeste', CO: 'Centro-Oeste', SE: 'Sudeste', S: 'Sul'};
+  mk('c_anos_compreg', {type: 'bar', data: {labels: rg.map(r => rgN[r]), datasets: ANOS.map(a => ({label: String(a),
+    data: rg.map(r => { const x = X.comp_reg[a][r]; return 100 * (x.c2 - x.c1) / x.aptos; }), backgroundColor: cy[a]}))},
+    options: {scales: {x: {grid: {display: false}}, y: {ticks: {callback: v => fp(v, 1) + ' pp'}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${sgn(c.raw, x => fp(x, 2))} pp`}}}}});
+  const norm = (arr, tot) => arr.map(p => ({x: 100 * p[3] / tot, y: 100 * p[1] / (p[1] + p[2])})).filter(p => p.x >= 1);
+  const ds = [2018, 2022, 2026].filter(a => Y[a].curva.t2.length).map(a => ({label: String(a), data: norm(Y[a].curva.t2, Y[a].pareamento.ambos), borderColor: cy[a]}));
+  ds.push({label: '2022 — totalização oficial TSE', data: H22['2T'].filter(p => p[3] >= 0.01).map(p => ({x: 100 * p[3], y: 100 * p[1] / (p[1] + p[2])})), borderColor: cy[2022], borderDash: [3, 3], borderWidth: 1.5});
+  mk('c_anos_curva', {type: 'line', data: {datasets: ds},
+    options: {interaction: {mode: 'nearest', intersect: false, axis: 'x'}, scales: {x: {type: 'linear', min: 0, max: 100, ticks: {callback: v => v + '%'}}, y: {min: 35, max: 60, ticks: {callback: v => v + '%'}}},
+      plugins: {tooltip: {callbacks: {title: c => `${fp(c[0].raw.x, 0)}% das seções`, label: c => `${c.dataset.label}: PT ${fp(c.raw.y, 2)}%`}}}}});
+  mk('c_anos_dig', {type: 'bar', data: {labels: lab, datasets: [
+    {type: 'line', label: 'p = 0,05', data: ANOS.map(() => 0.05), borderColor: C.ink2, borderDash: [5, 4]},
+    {label: 'PT', data: ANOS.map(a => Y[a].digitos.lula2.p_ultimo), backgroundColor: C.lula},
+    {label: 'Adversário', data: ANOS.map(a => Y[a].digitos.flavio2.p_ultimo), backgroundColor: C.flavio}]},
+    options: {scales: {x: {grid: {display: false}}, y: {min: 0, max: 1}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: p = ${fp(c.raw, 3)}`}}}}});
+  // municípios
+  const pts = X.pares['2022-2026'].pts, rgc = {N: C.s3, NE: C.lula, CO: C.s4, SE: C.flavio, S: C.s7};
+  mk('c_mun_sc', {type: 'scatter', data: {datasets: [
+    {type: 'line', label: 'Mesmo resultado', data: [{x: 0, y: 0}, {x: 100, y: 100}], borderColor: C.axis, borderWidth: 1, pointRadius: 0},
+    {label: 'Municípios', data: pts.map(p => ({x: p[0], y: p[1], w: p[2]})), backgroundColor: C.t2 + '40', borderWidth: 0, pointRadius: 2, pointHoverRadius: 5}]},
+    options: {interaction: {mode: 'nearest', intersect: true}, scales: {x: {min: 0, max: 100, title: {display: true, text: 'Lula 2022 (%)'}}, y: {min: 0, max: 100, title: {display: true, text: 'Lula 2026 (%)'}}},
+      plugins: {legend: {display: false}, tooltip: {filter: c => c.datasetIndex === 1, callbacks: {label: c => `2022: ${fp(c.raw.x)}% → 2026: ${fp(c.raw.y)}% (${f0(c.raw.w)} votos)`}}}}});
+  const pares = ['2014-2018', '2018-2022', '2022-2026'];
+  mk('c_mun_dp', {type: 'bar', data: {labels: pares.map(p => p.replace('-', ' → ')), datasets: [{label: 'Desvio-padrão (pp)', data: pares.map(p => 100 * X.pares[p].swing_dp_simples), backgroundColor: [C.t1, C.t1, C.t2]}]},
+    options: {indexAxis: 'y', plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => `${fp(c.raw, 2)} pp · correlação ${fp(X.pares[pares[c.dataIndex]].corr, 3)}`}}}, scales: {y: {grid: {display: false}}, x: {ticks: {callback: v => v + ' pp'}}}}});
+  const uf = Object.entries(X.pares['2022-2026'].uf).sort((a, b) => b[1].swing - a[1].swing);
+  mk('c_mun_uf', {type: 'bar', data: {labels: uf.map(u => u[0]), datasets: [{label: 'Variação', data: uf.map(u => 100 * u[1].swing), backgroundColor: uf.map(u => u[1].swing >= 0 ? C.lula : C.flavio)}]},
+    options: {plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => `${sgn(c.raw, x => fp(x, 2))} pp (${uf[c.dataIndex][1].n} municípios)`}}}, scales: {x: {grid: {display: false}, ticks: {autoSkip: false, font: {size: 10}}}, y: {ticks: {callback: v => v + ' pp'}}}}});
+}
+function defineBN(C) {
+  const e = BNC[2026].ef_mun, ks = ['cury', 'renan', 'caiado', 'zema'], nm = {cury: 'Cury', renan: 'Renan Santos', caiado: 'Caiado', zema: 'Zema'};
+  mk('c_elim', {type: 'bar', data: {labels: ks.map(k => `${nm[k]} (${f0(N[k] / 1000)} mil)`), datasets: [
+    {label: '→ Lula', data: ks.map(k => 100 * e[k][0]), backgroundColor: C.lula},
+    {label: '→ Flávio', data: ks.map(k => 100 * e[k][1]), backgroundColor: C.flavio}]},
+    options: {scales: {x: {grid: {display: false}}, y: {ticks: {callback: v => v + '%'}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw, 0)}%`}}}}});
+  mk('c_bnanos', {type: 'bar', data: {labels: ANOS.map(String), datasets: [
+    {label: 'Brancos → PT', data: ANOS.map(a => 100 * BNC[a].ef_mun.brancos[0]), backgroundColor: C.s4},
+    {label: 'Nulos → PT', data: ANOS.map(a => 100 * BNC[a].ef_mun.nulos[0]), backgroundColor: C.s7},
+    {label: 'Abstenção → PT', data: ANOS.map(a => 100 * BNC[a].ef_mun.abst[0]), backgroundColor: C.s3}]},
+    options: {scales: {x: {grid: {display: false}}, y: {ticks: {callback: v => v + '%'}}}, plugins: {tooltip: {callbacks: {label: c => `${c.dataset.label}: ${fp(c.raw, 0)}%`}}}}});
+}
+function drawHeatGrid() {
+  const c0 = hexrgb(css('--heat0')), c1 = hexrgb(css('--heat1')), g = $('fpgrid');
+  g.innerHTML = '';
+  ANOS.forEach(a => {
+    const H = Y[a].fingerprint.t2, wrap = document.createElement('div'), cv = document.createElement('canvas');
+    cv.width = 100; cv.height = 70; cv.className = 'heat';
+    wrap.innerHTML = `<div class="axislbl" style="justify-content:flex-start;color:var(--ink2);font-weight:600">${a} — ${NOMES[a][0]} × ${NOMES[a][1]}</div>`;
+    wrap.appendChild(cv); g.appendChild(wrap);
+    const ctx = cv.getContext('2d'), img = ctx.createImageData(100, 70);
+    let mx = 0; H.forEach(r => r.forEach(v => mx = Math.max(mx, v)));
+    for (let ti = 0; ti < 70; ti++) for (let si = 0; si < 100; si++) {
+      const v = H[ti][si], q = v ? Math.log(1 + v) / Math.log(1 + mx) : 0, o = ((69 - ti) * 100 + si) * 4;
+      for (let k = 0; k < 3; k++) img.data[o + k] = Math.round(c0[k] + (c1[k] - c0[k]) * q);
+      img.data[o + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  });
+}
+
+function Phi(x) { // CDF normal
+  const t = 1 / (1 + 0.2316419 * Math.abs(x)), d = 0.3989423 * Math.exp(-x * x / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return x > 0 ? 1 - p : p;
+}
+
+// ---------- mapas de calor (canvas) ----------
+function hexrgb(h) { h = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); }
+function drawHeat() {
+  const c0 = hexrgb(css('--heat0')), c1 = hexrgb(css('--heat1'));
+  [['fp1', D.fingerprint.t1], ['fp2', D.fingerprint.t2]].forEach(([id, H]) => {
+    const cv = $(id), ctx = cv.getContext('2d'), img = ctx.createImageData(100, 70);
+    let mx = 0; H.forEach(r => r.forEach(v => mx = Math.max(mx, v)));
+    for (let ti = 0; ti < 70; ti++) for (let si = 0; si < 100; si++) {
+      const v = H[ti][si], t = v ? Math.log(1 + v) / Math.log(1 + mx) : 0, row = 69 - ti, o = (row * 100 + si) * 4;
+      for (let k = 0; k < 3; k++) img.data[o + k] = Math.round(c0[k] + (c1[k] - c0[k]) * t);
+      img.data[o + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    cv.onmousemove = e => {
+      const r = cv.getBoundingClientRect(), si = Math.floor((e.clientX - r.left) / r.width * 100), row = Math.floor((e.clientY - r.top) / r.height * 70);
+      const ti = 69 - row; if (si < 0 || si > 99 || ti < 0 || ti > 69) return;
+      const tip = $('tip'); tip.style.display = 'block'; tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px';
+      tip.innerHTML = `Lula ${si}–${si + 1}% · comparecimento ${30 + ti}–${31 + ti}%<br><b>${f0(H[ti][si])}</b> seções`;
+    };
+    cv.onmouseleave = () => $('tip').style.display = 'none';
+  });
+}
+
+// ---------- textos e tabelas ----------
+const h26 = HIST[3], h22 = HIST[2];
+const ganhoA = h => h.a2 - h.a1, ganhoB = h => h.b2 - h.b1;
+table('t_hist', ['Ano', 'Líder 1º turno', 'Vencedor', 'Vantagem do líder no 1º', 'Votos dos eliminados', 'Ganho do líder', 'Ganho do 2º colocado', 'Abstenção 1º → 2º', 'Δ comparecimento'],
+  HIST.map(h => [String(h.ano), h.lider1, h.venceu, f0(h.a1 - h.b1), f0(h.val1 - h.a1 - h.b1), sgn(ganhoA(h), f0), sgn(ganhoB(h), f0),
+    `${fp(100 * (1 - h.comp1 / h.aptos), 2)}% → ${fp(100 * (1 - h.comp2 / h.aptos), 2)}%`, sgn(h.comp2 - h.comp1, f0)]), {textCols: 3});
+li('hist_find', [
+  `<b>Primeira virada da série:</b> de 2002 a 2022 o líder do 1º turno sempre venceu o 2º. Em 2026, Flávio liderou o 1º turno por ${f0(N.flavio1 - N.lula1)} votos (${fp(100 * (N.flavio1 - N.lula1) / v1, 2)} pp dos válidos) e perdeu o 2º por ${f0(N.lula2 - N.flavio2)}.`,
+  `<b>Comparecimento atípico:</b> ${sgn(N.comp2 - N.comp1, f0)} eleitores a mais no 2º turno. Em 2014 e 2018 o comparecimento caiu (${f0(HIST[0].comp2 - HIST[0].comp1)} e ${f0(HIST[1].comp2 - HIST[1].comp1)}); em 2022 subiu só ${f0(h22.comp2 - h22.comp1)}. É a característica mais fora do padrão histórico de 2026.`,
+  `<b>Captura do ganho:</b> Lula ficou com ${fp(capt26())}% do ganho somado dos finalistas; precisava de ${fp(need26())}% para virar. Nos anos anteriores o 2º colocado capturou ${HIST.slice(0, 3).map(h => fp(100 * ganhoB(h) / (ganhoA(h) + ganhoB(h)))+ '%').join(', ')} — o valor de 2026 é o maior da série, mas segue a mesma tendência crescente (2014 → 2018 → 2022 → 2026).`,
+]);
+function capt26() { return 100 * ganhoB(h26) / (ganhoA(h26) + ganhoB(h26)); }
+function need26() { const g = ganhoA(h26) + ganhoB(h26); return 100 * (g + h26.a1 - h26.b1) / 2 / g; }
+
+// cenário sem migração
+const gL = N.lula2 - N.lula1, gF = N.flavio2 - N.flavio1, dCompN = N.comp2 - N.comp1, dBNN = N.bn1 - N.bn2;
+table('t_cen', ['Componente', 'Votos'], [
+  ['Estoque: votos dos eliminados', f0(N.outros1)], ['Estoque: queda de brancos/nulos', f0(dBNN)], ['Estoque: aumento de comparecimento', f0(dCompN)],
+  [{v: '<b>Total disponível</b>'}, {v: '<b>' + f0(N.outros1 + dBNN + dCompN) + '</b>'}],
+  ['Ganho de Lula', `${f0(gL)} (${pct(gL, gL + gF, 1)})`], ['Ganho de Flávio', `${f0(gF)} (${pct(gF, gL + gF, 1)})`]]);
+li('cen_find', [
+  `O total disponível (${mi(N.outros1 + dBNN + dCompN)}) é exatamente o ganho somado (${mi(gL + gF)}). Logo, <b>o resultado é matematicamente possível sem nenhum eleitor de Flávio virar Lula</b>.`,
+  `Nesse cenário, Lula precisaria de ${pct(gL, N.outros1 + dBNN + dCompN, 1)} do estoque e Flávio de ${pct(gF, N.outros1 + dBNN + dCompN, 1)}. Como apenas ~${pct(N.outros1, N.outros1 + dBNN + dCompN, 0)} do estoque são eleitores dos eliminados, a decisão foi pesada também por quem não votou (ou votou branco/nulo) no 1º turno.`,
+]);
+
+// Goodman
+const G = D.goodman.BR, rowsG = ['Lula (1º)', 'Flávio (1º)', 'Eliminados', 'Branco/nulo', 'Abstenção'];
+const gc = x => cell(fp(100 * x, 1) + '%', x, Math.abs(x) >= 0.3 ? '' : '');
+table('t_goodman', ['Origem → destino', 'Lula', 'Flávio', 'Branco/nulo', 'Abstenção'],
+  rowsG.map((r, i) => [r, gc(G.lula2[i]), gc(G.flavio2[i]), gc(G.bn2[i]), gc(G.abst2[i])]));
+const pool = [N.lula1, N.flavio1, N.outros1, N.bn1, N.aptos1 - N.comp1];
+li('good_find', [
+  `<b>Migração direta Flávio → Lula ≈ 0:</b> o coeficiente é ${fp(100 * G.lula2[1], 1)}% (e Lula → Flávio ${fp(100 * G.flavio2[0], 1)}%). Valores levemente negativos são ruído típico da regressão ecológica. Os dados por seção são <b>consistentes com a hipótese da conversa</b> de que quase ninguém trocou de lado.`,
+  `<b>Eleitores dos eliminados se dividiram quase meio a meio</b>: ${fp(100 * G.lula2[2], 0)}% Lula, ${fp(100 * G.flavio2[2], 0)}% Flávio, ${fp(100 * G.bn2[2], 0)}% branco/nulo — — no agregado. Separando por candidato (gráfico abaixo), os eleitores de Caiado e Zema seguiram o apoio a Flávio, mas os de Cury, o maior bloco, foram mais para Lula. No Nordeste Lula levou ${fp(100 * D.goodman.NE.lula2[2], 0)}%; no Sul Flávio levou ${fp(100 * D.goodman.S.flavio2[2], 0)}%.`,
+  `<b>O diferencial estimado veio de quem votou branco/nulo ou se absteve no 1º turno</b>: coeficientes branco/nulo → Lula ${fp(100 * G.lula2[3], 0)}% e abstenção → Lula ${fp(100 * G.lula2[4], 1)}% (contra ${fp(100 * G.flavio2[4], 1)}% para Flávio). Esses coeficientes são os menos confiáveis da matriz (grupos pequenos por seção) — trate como indício, não medida.`,
+  `Cautela: regressão ecológica supõe que eleitores de um mesmo grupo se comportam igual em todas as seções. Só uma pesquisa de painel mede migração individual.`,
+]);
+
+// UF
+table('t_uf', ['UF', 'Lula 1º', 'Flávio 1º', 'Eliminados', 'Lula 2º', 'Flávio 2º', '% Lula 2º', 'Virada (pp)', 'Δ Lula', 'Δ Flávio', 'Δ comparec.'],
+  D.uf.map(u => { const s2 = u.lula2 / (u.lula2 + u.flavio2), s1 = u.lula1 / (u.lula1 + u.flavio1), sw = 100 * (s2 - s1), dl = u.lula2 - u.lula1, df = u.flavio2 - u.flavio1, dc = u.comp2 - u.comp1;
+    return [u.uf === 'ZZ' ? 'Exterior' : u.uf, cell(f0(u.lula1), u.lula1), cell(f0(u.flavio1), u.flavio1), cell(f0(u.outros1), u.outros1), cell(f0(u.lula2), u.lula2), cell(f0(u.flavio2), u.flavio2),
+      cell(fp(100 * s2, 2) + '%', s2, s2 > .5 ? 'pos' : 'neg'), cell(sgn(sw, x => fp(x, 2)), sw), cell(sgn(dl, f0), dl, dl < 0 ? 'pos' : ''), cell(sgn(df, f0), df, df < 0 ? 'neg' : ''), cell(sgn(dc, f0), dc)]; }));
+const fl = D.uf.filter(u => u.flavio2 < u.flavio1).map(u => u.uf), llost = D.uf.filter(u => u.lula2 < u.lula1).map(u => u.uf);
+const fallC = D.uf.filter(u => u.comp2 < u.comp1).map(u => u.uf);
+li('uf_find', [
+  `<b>Flávio teve menos votos no 2º turno do que no 1º em ${fl.length} estados</b>: ${fl.join(', ')}. Lula perdeu votos em ${llost.length ? llost.join(', ') : 'nenhum estado'}.`,
+  `<b>Todos esses estados tiveram queda de comparecimento</b> no 2º turno (lista completa de quedas: ${fallC.join(', ')}). O comparecimento no Norte cai no 2º turno em <b>todas</b> as eleições desde 2014 (ver seção de comparação); o padrão é compatível com eleitores de Flávio que não voltaram para votar, mais do que com troca de lado.`,
+  `Lula venceu em ${D.uf.filter(u => u.uf !== 'ZZ' && u.lula2 > u.flavio2).length} das 27 UFs; a % de Lula (entre Lula e Flávio) subiu do 1º para o 2º turno em <b>todas</b> as UFs — de +${fp(Math.min(...D.uf.map(u => 100 * (u.lula2 / (u.lula2 + u.flavio2) - u.lula1 / (u.lula1 + u.flavio1)))), 2)} a +${fp(Math.max(...D.uf.map(u => 100 * (u.lula2 / (u.lula2 + u.flavio2) - u.lula1 / (u.lula1 + u.flavio1)))), 2)} pp. Uma virada homogênea em todo o país, sem estado destoando.`,
+]);
+
+// alegações
+const U = D.unanimes;
+table('t_unan', ['', '1º turno', '2º turno', '2º turno (≥ 50 votos)'], [
+  ['Seções 100% Lula', U.t1.lula, U.t2.lula, U.t2_ge50.lula], ['Seções 100% Flávio', U.t1.flavio, U.t2.flavio, U.t2_ge50.flavio],
+  ['Votos nessas seções (Lula)', f0(U.t1.lula_votos), f0(U.t2.lula_votos), f0(U.t2_ge50.lula_votos)]]);
+const R = D.rio_capital, RE = D.rj_estado;
+const rs = (t, k) => pct(t[k], t.lula1 + t.flavio1 + t.outros1);
+table('t_rio', ['', 'Lula 1º', 'Flávio 1º', 'Lula 2º', 'Flávio 2º'], [
+  ['Capital — votos', f0(R.lula1), f0(R.flavio1), f0(R.lula2), f0(R.flavio2)],
+  ['Capital — %', rs(R, 'lula1'), rs(R, 'flavio1'), pct(R.lula2, R.lula2 + R.flavio2), pct(R.flavio2, R.lula2 + R.flavio2)],
+  ['Estado — votos', f0(RE.lula1), f0(RE.flavio1), f0(RE.lula2), f0(RE.flavio2)],
+  ['Estado — %', rs(RE, 'lula1'), rs(RE, 'flavio1'), pct(RE.lula2, RE.lula2 + RE.flavio2), pct(RE.flavio2, RE.lula2 + RE.flavio2)]]);
+li('rio_find', [
+  `Os números da conversa para a capital (43,91% × 47,88% no 1º; 1.898.391 × 1.785.198 no 2º) <b>conferem exatamente</b>.`,
+  `Na capital Flávio ganhou ${f0(R.flavio2 - R.flavio1)} votos e Lula ${f0(R.lula2 - R.lula1)} — não “um voto”. A capital tinha ${f0(R.outros1)} votos de eliminados e o comparecimento subiu ${f0(R.comp2 - R.comp1)}.`,
+  `No estado do RJ Flávio venceu por ${f0(RE.flavio2 - RE.lula2)} votos, como dito na conversa.`,
+]);
+table('t_mun1', ['Município', 'UF', 'Flávio 1º', 'Flávio 2º', 'Δ Flávio', 'Lula 1º', 'Lula 2º', 'Δ Lula', 'Eliminados 1º'],
+  D.mun_delta_flavio_pequeno.map(m => [m.mun, m.uf, f0(m.f1), f0(m.f2), sgn(m.f2 - m.f1, f0), f0(m.l1), f0(m.l2), sgn(m.l2 - m.l1, f0), f0(m.o1)]), {textCols: 2});
+table('t_unanlist', ['Município', 'UF', 'Zona', 'Seção', 'Aptos', 'Comparec.', 'Lula 2º', 'Flávio 2º', 'Br/Nulo', 'Lula 1º', 'Flávio 1º', 'Elim. 1º'],
+  D.unanimes_lista.map(s => [s.mun, s.uf, s.zona, s.secao, s.aptos, s.comp, s.lula, s.flavio, s.bn, s.lula1, s.flavio1, s.outros1]), {textCols: 2});
+
+li('perd_find', [
+  `Flávio teve <b>menos votos no 2º do que no 1º turno em ${f0(P.secoes_flavio_perdeu)} seções</b> (${pct(P.secoes_flavio_perdeu, D.pareamento.ambos, 1)}), somando ${f0(P.votos_flavio_perdeu)} votos de perda líquida. Lula perdeu em ${f0(P.secoes_lula_perdeu)} seções (${f0(P.votos_lula_perdeu)} votos).`,
+  `Mesmo que <i>todos</i> esses ${f0(P.votos_flavio_perdeu)} votos tivessem ido para Lula (hipótese máxima de migração), isso explicaria só ${pct(2 * P.votos_flavio_perdeu, N.lula2 - N.flavio2, 0)} da margem final.`,
+  `Em ${f0(D.pareamento.aptos_diferentes)} seções o número de aptos mudou entre os turnos (em ${pct(D.aptos_dif_hist[1], D.pareamento.aptos_diferentes, 0)} delas, por apenas 1 eleitor) — normal: transferências temporárias, óbitos e decisões judiciais. Total líquido no país: 0.`,
+]);
+
+// outliers
+const OC = D.outliers_cfg;
+li('out_find', [
+  `${f0(OC.z4)} seções (${pct(OC.z4, OC.n, 2)}) têm |z| &gt; 4, contra ~${f0(OC.esperado_normal_z4)} numa normal perfeita. Caudas mais pesadas que a normal são <b>esperadas</b> em dados eleitorais (seções pequenas, aldeias, presídios, mudanças de local). O que importa é a direção e o tamanho:`,
+  `<b>Direção equilibrada:</b> ${f0(OC.z4_pro_lula)} atípicas pró-Lula e ${f0(OC.z4_pro_flavio)} pró-Flávio. Uma manipulação sistemática a favor de um lado geraria uma cauda unilateral.`,
+  `<b>Impacto em votos:</b> somando quanto cada seção atípica se afastou do seu município, o efeito líquido é de <b>${sgn(D.outliers_impacto.liquido_lula, f0)} votos para Lula</b> — ${pct(Math.abs(D.outliers_impacto.liquido_lula), N.lula2 - N.flavio2, 3)} da margem de ${f0(N.lula2 - N.flavio2)}.`,
+  `As seções atípicas se concentram proporcionalmente no <b>exterior</b> e no <b>Norte</b> (AC, AP, RR, PA, AM), onde há seções pequenas e remotas com alta variação natural. São boas candidatas para conferência individual de boletim de urna — a tabela abaixo serve como lista de checagem.`,
+]);
+table('t_out', ['Município', 'UF', 'Zona', 'Seção', 'z', 'Virada (pp)', 'Mediana mun. (pp)', 'Lula 1º', 'Flávio 1º', 'Elim. 1º', 'Lula 2º', 'Flávio 2º', 'Comp. 1º', 'Comp. 2º', 'Aptos'],
+  D.outliers.map(o => [o.mun, o.uf, o.zona, o.secao, cell(fp(o.z, 1), o.z, o.z > 0 ? 'pos' : 'neg'), cell(sgn(o.sw, x => fp(x, 1)), o.sw), fp(o.munmed, 1), o.lula1, o.flavio1, o.outros1, o.lula2, o.flavio2, o.comp1, o.comp2, o.aptos]), {textCols: 2});
+
+// fingerprint
+const fpN = H => H.reduce((s, r) => s + r.reduce((a, b) => a + b, 0), 0);
+const corner = H => { let s = 0; for (let t = 60; t < 70; t++) for (let k = 90; k < 100; k++) s += H[t][k]; return s; };
+const cornerF = H => { let s = 0; for (let t = 60; t < 70; t++) for (let k = 0; k < 10; k++) s += H[t][k]; return s; };
+$('fp1sub').textContent = `${f0(fpN(D.fingerprint.t1))} seções · correlação comparecimento × % Lula: ${fp(D.corr_turn_share.t1, 3)}`;
+$('fp2sub').textContent = `${f0(fpN(D.fingerprint.t2))} seções · correlação comparecimento × % Lula: ${fp(D.corr_turn_share.t2, 3)}`;
+li('fp_find', [
+  `Nos dois turnos a nuvem é <b>contínua e alongada horizontalmente</b> (a % de Lula varia muito entre seções; o comparecimento varia pouco). Não há uma segunda mancha isolada no canto superior.`,
+  `Seções com comparecimento ≥ 90% e ≥ 90% de Lula: ${f0(corner(D.fingerprint.t1))} no 1º turno e ${f0(corner(D.fingerprint.t2))} no 2º; com ≥ 90% de comparecimento e ≤ 10% de Lula (canto oposto): ${f0(cornerF(D.fingerprint.t2))} no 2º turno.`,
+  `A correlação entre comparecimento e votação em Lula é praticamente nula (${fp(D.corr_turn_share.t2, 3)}). Enchimento de urna costuma produzir correlação positiva forte entre comparecimento e o candidato beneficiado.`,
+]);
+
+// modelos
+const modsT = D.modelos.slice().sort((a, b) => b.secoes_t2 - a.secoes_t2);
+table('t_mod', ['Modelo / origem do BU', 'Seções 2º', 'Lula 2º', 'Flávio 2º', '% Lula 2º', '% Lula 1º (L+F)', 'Resíduo médio (pp)', 'Seções no resíduo'],
+  modsT.map(m => [m.modelo, f0(m.secoes_t2), f0(m.lula2), f0(m.flavio2), m.lula2 + m.flavio2 ? pct(m.lula2, m.lula2 + m.flavio2) : '—',
+    m.lula1 + m.flavio1 ? pct(m.lula1, m.lula1 + m.flavio1) : '—', m.resid_medio == null ? '—' : fp(m.resid_medio, 3), f0(m.resid_n)]));
+
+// curva
+const c2 = D.curva.t2.filter(p => p[3] > 2000), hm = m => String(Math.floor(m / 60) % 24).padStart(2, '0') + 'h' + String(m % 60).padStart(2, '0');
+const fLead = c2.filter(p => p[2] > p[1]), lastF = fLead[fLead.length - 1], retake = lastF && c2.find(p => p[0] > lastF[0] && p[1] > p[2]);
+const c1 = D.curva.t1.filter(p => p[3] > 2000), c1min = c1.reduce((m, p) => (p[1] / (p[1] + p[2]) < m[1] / (m[1] + m[2]) ? p : m), c1[0]);
+li('cur_find', [
+  `<b>2º turno:</b> Lula abriu à frente com os primeiros boletins; Flávio liderou entre ${hm(fLead[0][0])} e ${hm(lastF[0])} (última medição com Flávio à frente: ${f0(lastF[3])} seções apuradas); Lula retomou a liderança às ${hm(retake[0])} com ${f0(retake[3])} seções (${pct(retake[3], D.pareamento.ambos, 0)} do total) e não perdeu mais.`,
+  `<b>1º turno, mesmo formato:</b> Lula chegou a ${fp(100 * c1min[1] / (c1min[1] + c1min[2]), 1)}% (entre Lula e Flávio) às ${hm(c1min[0])} e subiu continuamente até ${fp(100 * N.lula1 / (N.lula1 + N.flavio1), 1)}% no fim. A subida tardia de Lula nos dois turnos se explica pela ordem de chegada: o gráfico da direita mostra que Norte, Sul e Centro-Oeste chegam primeiro e que Sudeste e Nordeste completam por último.`,
+  `Observação: nos arquivos do TSE, os horários de recebimento do 2º turno começam por volta das 19h (no 1º turno, às 17h). A análise usa os horários como publicados.`,
+]);
+const dl = D.digitos;
+$('dig1sub').textContent = `Teste qui-quadrado de uniformidade: Lula p = ${fp(dl.lula2.p_ultimo, 2)}, Flávio p = ${fp(dl.flavio2.p_ultimo, 2)} (p > 0,05 = sem desvio significativo). n ≈ ${f0(dl.lula2.n)} seções.`;
+
+// conclusões
+li('concl', [
+  `<b>O que foi de fato atípico em 2026:</b> (1) primeira virada do líder do 1º turno desde 2002; (2) comparecimento <i>subiu</i> ${f0(N.comp2 - N.comp1)} no 2º turno, algo sem precedente na série; (3) os eleitores dos eliminados se dividiram ~meio a meio: os de Caiado e Zema seguiram o apoio a Flávio, mas os de Cury (o maior bloco) foram majoritariamente para Lula; (4) o coeficiente estimado de brancos/nulos do 1º turno indo para Lula (${fp(100 * GA(2026).lula2[3], 0)}%) é muito maior que em 2014–2022 (${fp(100 * GA(2014).lula2[3], 0)}%, ${fp(100 * GA(2018).lula2[3], 0)}%, ${fp(100 * GA(2022).lula2[3], 0)}%). Já a queda de Flávio no Norte <i>não</i> é atípica: o Norte perde comparecimento no 2º turno em todas as eleições da série.`,
+  `<b>Comparação com 2014–2022:</b> aplicados os mesmos testes às quatro eleições, 2026 tem a menor taxa de seções atípicas, o menor número de seções unânimes pró-PT, a maior estabilidade geográfica municipal em relação à eleição anterior e o mesmo padrão de “ninguém troca de lado”. Nos indicadores clássicos de manipulação, 2026 é a eleição <i>menos</i> anômala da série.</li><li><b>O que os dados não mostram:</b> nenhum teste estatístico aplicado indicou sinal compatível com manipulação sistemática — último dígito uniforme (p = ${fp(dl.lula2.p_ultimo, 2)} e ${fp(dl.flavio2.p_ultimo, 2)}), impressão digital sem mancha anômala, correlação comparecimento × voto ≈ 0, seções atípicas equilibradas entre os dois lados com efeito líquido de ${f0(D.outliers_impacto.liquido_lula)} votos, modelos de urna com diferença &lt; 0,1 pp dentro do município, e curva de apuração explicada pela ordem regional.`,
+  `<b>Sobre a hipótese de “ninguém mudou de lado”:</b> os dados por seção são compatíveis com ela. A vitória de Lula é explicada aritmeticamente por (a) metade dos votos dos eliminados, (b) a queda de ${f0(N.bn1 - N.bn2)} brancos/nulos e (c) ${f0(N.comp2 - N.comp1)} eleitores a mais, com a maior parte de (b) e (c) indo para Lula.`,
+  `<b>Pesquisas × resultado:</b> as pesquisas citadas na conversa (Flávio 51% × Lula 49%) erraram por ~3 pp — dentro do histórico de erro das pesquisas brasileiras de 2º turno, especialmente quando o comparecimento muda tanto, pois os modelos de “eleitor provável” das pesquisas não capturam eleitores que não votaram no 1º turno.`,
+  `<b>Próximos passos para auditoria:</b> (1) entender o salto de branco/nulo → Lula — o indicador que mais destoa da série e resiste ao controle por município — com pesquisas pós-eleitorais de painel e o perfil das seções onde brancos/nulos mais caíram; (2) conferir os boletins de urna das 40 seções mais atípicas e das 110 seções unânimes no portal do TSE (QR code do BU / resultados.tse.jus.br), e o log das urnas dessas seções.`,
+]);
+
+// painel por ano
+const row = (nome, f, fmt) => [nome, ...ANOS.map(a => fmt(f(Y[a], a)))];
+const pc = (x, d = 2) => fp(x, d) + '%';
+table('t_anos', ['Indicador', ...ANOS.map(a => `${a}<br><span style="font-weight:400;color:var(--muted)">${NOMES[a][0]} × ${NOMES[a][1]}</span>`)], [
+  row('Seções analisadas (presentes nos 2 turnos)', y => y.pareamento.ambos, f0),
+  row('Comparecimento 1º → 2º turno', y => y.nacional.comp2 - y.nacional.comp1, x => sgn(x, f0)),
+  row('Virada média por seção (pp, a favor do PT)', y => 100 * y.swing_stats.media, x => sgn(x, v => fp(v, 2))),
+  row('Desvio-padrão da virada por seção (pp)', y => 100 * y.swing_stats.dp, x => fp(x, 2)),
+  row('Seções com |z| > 4 (% do total)', y => 100 * y.outliers_cfg.z4 / y.outliers_cfg.n, x => pc(x, 3)),
+  row('  … pró-PT / pró-adversário', y => `${f0(y.outliers_cfg.z4_pro_lula)} / ${f0(y.outliers_cfg.z4_pro_flavio)}`, x => x),
+  row('  … efeito líquido em votos (PT)', y => y.outliers_impacto.liquido_lula, x => sgn(x, f0)),
+  row('Seções 100% PT / 100% adversário (2º turno)', y => `${y.unanimes.t2.lula} / ${y.unanimes.t2.flavio}`, x => x),
+  row('Seções em que o adversário perdeu votos', y => 100 * y.perdas.secoes_flavio_perdeu / y.pareamento.ambos, x => pc(x, 1)),
+  row('Seções em que o PT perdeu votos', y => 100 * y.perdas.secoes_lula_perdeu / y.pareamento.ambos, x => pc(x, 1)),
+  row('Goodman: adversário (1º) → PT (2º)', y => 100 * y.goodman.BR.lula2[1], x => pc(x, 1)),
+  row('Goodman: PT (1º) → adversário (2º)', y => 100 * y.goodman.BR.flavio2[0], x => pc(x, 1)),
+  row('Goodman: eliminados → PT / → adversário', y => `${fp(100 * y.goodman.BR.lula2[2], 0)}% / ${fp(100 * y.goodman.BR.flavio2[2], 0)}%`, x => x),
+  row('Goodman: branco/nulo (1º) → PT / → adversário', y => `${fp(100 * y.goodman.BR.lula2[3], 0)}% / ${fp(100 * y.goodman.BR.flavio2[3], 0)}%`, x => x),
+  row('Goodman: abstenção (1º) → PT / → adversário', y => `${fp(100 * y.goodman.BR.lula2[4], 1)}% / ${fp(100 * y.goodman.BR.flavio2[4], 1)}%`, x => x),
+  row('Correlação comparecimento × % PT (2º turno)', y => y.corr_turn_share.t2, x => fp(x, 3)),
+  row('Último dígito — p-valor PT / adversário', y => `${fp(y.digitos.lula2.p_ultimo, 2)} / ${fp(y.digitos.flavio2.p_ultimo, 2)}`, x => x),
+], {textCols: 1});
+const OCr = a => 100 * Y[a].outliers_cfg.z4 / Y[a].outliers_cfg.n;
+li('anos_find', [
+  `<b>Seções atípicas:</b> 2026 tem a <b>menor</b> taxa da série (${ANOS.map(a => `${a}: ${fp(OCr(a), 2)}%`).join(' · ')}). O lado favorecido varia de ano para ano (pró-adversário em 2014 e 2022, pró-PT em 2018 e 2026), e o efeito líquido nunca passou de ~44 mil votos (2018).`,
+  `<b>Seções unânimes:</b> 2026 também tem o <b>menor</b> número de seções 100% PT (${ANOS.map(a => `${a}: ${Y[a].unanimes.t2.lula}`).join(' · ')}). É um fenômeno recorrente, concentrado em seções pequenas do Norte e Nordeste.`,
+  `<b>Candidato que perde votos entre turnos:</b> em 2026 Flávio perdeu votos em ${pc(100 * Y[2026].perdas.secoes_flavio_perdeu / Y[2026].pareamento.ambos, 1)} das seções; em 2022 foi Lula quem perdeu em ${pc(100 * Y[2022].perdas.secoes_lula_perdeu / Y[2022].pareamento.ambos, 1)}. É o padrão espelhado: o finalista que cresce menos no 2º turno perde votos líquidos em ~1/6 das seções.`,
+  `<b>Migração direta entre finalistas:</b> em todos os anos o coeficiente “adversário → PT” fica entre ${fp(Math.min(...ANOS.map(a => 100 * GA(a).lula2[1])), 0)}% e ${fp(Math.max(...ANOS.map(a => 100 * GA(a).lula2[1])), 0)}% — ninguém troca de lado em nenhuma eleição. 2026 é igual às outras.`,
+  `<b>O indicador realmente fora do padrão:</b> o coeficiente <b>branco/nulo do 1º turno → PT</b> foi ${fp(100 * GA(2026).lula2[3], 0)}% em 2026, contra ${fp(100 * GA(2014).lula2[3], 0)}% (2014), ${fp(100 * GA(2018).lula2[3], 0)}% (2018) e ${fp(100 * GA(2022).lula2[3], 0)}% (2022), e é alto em todas as regiões (Sul ${fp(100 * Y[2026].goodman.S.lula2[3], 0)}%, Sudeste ${fp(100 * Y[2026].goodman.SE.lula2[3], 0)}%). Junto com a queda de ${f0(N.bn1 - N.bn2)} brancos/nulos e o aumento do comparecimento, é o principal “motor” estatístico da virada. A regressão ecológica não diz se isso é mudança real de comportamento (eleitores que anularam/votaram branco no 1º turno e decidiram votar em Lula no 2º) ou efeito de composição — mas é <b>onde uma investigação deveria focar</b>, não em seções unânimes ou modelos de urna.`,
+]);
+li('anos_find2', [
+  `<b>Comparecimento por região:</b> o Norte <b>cai em todas as eleições</b> (${ANOS.map(a => { const x = X.comp_reg[a].N; return sgn(100 * (x.c2 - x.c1) / x.aptos, v => fp(v, 1)); }).join(', ')} pp). A queda de Flávio nos estados do Norte segue esse padrão histórico. O que é inédito em 2026 é a <b>alta nas outras regiões</b> (Sudeste ${sgn(100 * (X.comp_reg[2026].SE.c2 - X.comp_reg[2026].SE.c1) / X.comp_reg[2026].SE.aptos, v => fp(v, 1))} pp, contra ${sgn(100 * (X.comp_reg[2022].SE.c2 - X.comp_reg[2022].SE.c1) / X.comp_reg[2022].SE.aptos, v => fp(v, 1))} em 2022).`,
+  `<b>Curva da apuração:</b> a curva de 2022 reconstruída pelos horários dos boletins coincide com a totalização oficial do TSE, o que valida o método. Em 2018, 2022 e 2026 o PT sobe no fim da apuração — efeito da chegada tardia do Nordeste/Sudeste, presente nos três anos.`,
+  `<b>Impressão digital:</b> o mesmo formato de nuvem contínua nas quatro eleições, sem mancha isolada no canto de comparecimento alto + votação extrema.`,
+  `<b>Último dígito:</b> os votos do PT passam no teste nos quatro anos. Os do adversário “falham” em 2014 e 2022 por uma queda suave e regular do dígito 0 ao 9 (~1,5%), efeito estatístico conhecido de seções com contagens baixas — e, se fosse indício de algo, apontaria contra o candidato <i>derrotado</i>, o que não faz sentido como sinal de fraude. Em 2026 os dois passam.`,
+]);
+const PX = X.pares['2022-2026'];
+li('mun_find', [
+  `<b>2026 é a eleição geograficamente mais estável da série:</b> correlação de ${fp(PX.corr, 3)} entre a % de Lula em 2022 e em 2026 por município (2018→2022: ${fp(X.pares['2018-2022'].corr, 3)}; 2014→2018: ${fp(X.pares['2014-2018'].corr, 3)}). A variação municipal tem desvio-padrão de ${fp(100 * PX.swing_dp_simples, 1)} pp, metade da de 2018→2022.`,
+  `Lula ganhou em média ${sgn(100 * PX.swing_medio, v => fp(v, 2))} pp por município em relação a 2022, de forma quase uniforme. Só ${PX.resid_z4} municípios fogem da tendência com resíduo acima de 4 desvios robustos (±${fp(400 * PX.resid_mad, 1)} pp): <b>${PX.resid_z4_neg} a favor de Flávio e ${PX.resid_z4_pos} a favor de Lula</b>. Os maiores desvios municipais (até ${fp(PX.top_neg[0].resid, 1)} pp, concentrados no RS e PR) são pró-Flávio; os maiores pró-Lula não passam de +${fp(PX.top_pos[0].resid, 1)} pp.`,
+  `Votos “criados” em pontos específicos apareceriam como pontos isolados acima da diagonal. O gráfico mostra uma faixa estreita e contínua.`,
+]);
+const mrow = m => [m.mun, m.uf, fp(m.s_a, 1) + '%', fp(m.s_b, 1) + '%', cell(sgn(m.resid, v => fp(v, 1)), m.resid, m.resid > 0 ? 'pos' : 'neg'), f0(m.votos), sgn(m.comp_b - m.comp_a, f0)];
+const mh = ['Município', 'UF', 'Lula 2022', 'Lula 2026', 'Resíduo (pp)', 'Votos 2026', 'Δ comparec.'];
+table('t_mun_pos', mh, PX.top_pos.map(mrow), {textCols: 2});
+table('t_mun_neg', mh, PX.top_neg.map(mrow), {textCols: 2});
+
+const EB = BNC[2026].ef_mun;
+li('elim_find', [
+  `<b>Os apoios funcionaram para Caiado e Zema, não para Cury:</b> estima-se que ${fp(100 * EB.caiado[1], 0)}% dos eleitores de Caiado e ~${fp(Math.min(100, 100 * EB.zema[1]), 0)}% dos de Zema foram para Flávio, mas ${fp(100 * EB.cury[0], 0)}% dos de Cury (o maior dos eliminados, ${f0(N.cury)} votos) foram para Lula. Os de Renan Santos se dividiram (${fp(100 * EB.renan[0], 0)}% × ${fp(100 * EB.renan[1], 0)}%), com o restante indo a branco/nulo/abstenção.`,
+  `<b>Brancos e nulos:</b> com controle por município, ${fp(100 * EB.brancos[0], 0)}% dos brancos e ${fp(100 * EB.nulos[0], 0)}% dos nulos do 1º turno teriam ido para Lula — os maiores valores da série (2022: ${fp(100 * BNC[2022].ef_mun.brancos[0], 0)}% e ${fp(100 * BNC[2022].ef_mun.nulos[0], 0)}%). A abstenção do 1º turno → Lula também é a maior (${fp(100 * EB.abst[0], 0)}%, contra ${ANOS.slice(0, 3).map(a => fp(100 * BNC[a].ef_mun.abst[0], 0) + '%').join(', ')}). 2014, o ano mais parecido, também teve forte queda de brancos/nulos no 2º turno.`,
+  `Esses números são estimativas ecológicas (grupos, não indivíduos). Eles não indicam manipulação — indicam <b>quem</b> estatisticamente decidiu a virada: eleitores que no 1º turno não escolheram nenhum candidato e no 2º votaram em Lula.`,
+]);
+
+buildAll();
+$('themebtn').onclick = () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.dataset.theme = cur === 'dark' ? 'light' : 'dark';
+  buildAll();
+};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', buildAll);
+</script>
+</body>
+</html>
